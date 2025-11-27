@@ -50,9 +50,21 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public void addAll(List<T> list) {
-        while (size + list.size() > array.length) {
-            growIfFull();
+        if (list == null || list.size() == 0) {
+            return;
         }
+
+        int requiredCapacity = size + list.size();
+        if (requiredCapacity > array.length) {
+            int newCapacity = array.length;
+            while (newCapacity < requiredCapacity) {
+                newCapacity = (int) (newCapacity * GROWTH_FACTOR);
+            }
+            Object[] newArray = new Object[newCapacity];
+            System.arraycopy(array, 0, newArray, 0, size);
+            array = newArray;
+        }
+
         for (int i = 0; i < list.size(); i++) {
             array[size++] = list.get(i);
         }
