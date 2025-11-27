@@ -3,98 +3,82 @@ package core.basesyntax;
 import java.util.NoSuchElementException;
 
 public class ArrayList<T> implements List<T> {
-    private Object[] array = new Object[10];
-    private int size = 0;
+    private static final int DEFAULT_CAPACITY = 10;
+    private static final double GROWTH_FACTOR = 1.5;
 
-    private Object[] extendArray() {
-        if (size == array.length) {
-            Object[] newArray = new Object[(int) (array.length * 1.5)];
-            for (int i = 0; i < array.length; i++) {
-                newArray[i] = array[i];
-            }
-            array = newArray;
-        }
-        return array;
+    private Object[] array;
+    private int size;
+
+    public ArrayList() {
+        array = new Object[DEFAULT_CAPACITY];
+        size = 0;
     }
 
-    private void ensureCapacity(int minCapacity) {
-        if (array.length < minCapacity) {
-            int newLength = array.length;
-            while (newLength < minCapacity) {
-                newLength = (int) (newLength * 1.5);
-            }
-            Object[] newArray = new Object[newLength];
-            for (int i = 0; i < size; i++) {
-                newArray[i] = array[i];
-            }
+    private void growIfFull() {
+        if (size >= array.length) {
+            Object[] newArray = new Object[(int) (array.length * GROWTH_FACTOR)];
+            System.arraycopy(array, 0, newArray, 0, array.length);
             array = newArray;
+        }
+    }
+
+    private void checkIndex(int index) {
+        if (index < 0 || index >= size) {
+            throw new ArrayListIndexOutOfBoundsException(
+                    "Index out of bound: " + index);
         }
     }
 
     @Override
     public void add(T value) {
-        extendArray();
-        array[size] = value;
-        size++;
+        growIfFull();
+        array[size++] = value;
     }
 
     @Override
     public void add(T value, int index) {
         if (index < 0 || index > size) {
-            throw new ArrayListIndexOutOfBoundsException("Index out of bound");
+            throw new ArrayListIndexOutOfBoundsException(
+                    "Index out of bound: " + index);
         }
-
-        extendArray();
-
-        for (int i = size - 1; i >= index; i--) {
-            array[i + 1] = array[i];
-        }
-
+        growIfFull();
+        // Сдвигаем элементы вправо
+        System.arraycopy(array, index, array, index + 1, size - index);
         array[index] = value;
         size++;
     }
 
     @Override
     public void addAll(List<T> list) {
-        ensureCapacity(size + list.size());
+        while (size + list.size() > array.length) {
+            growIfFull();
+        }
         for (int i = 0; i < list.size(); i++) {
-            array[size] = list.get(i);
-            size++;
+            array[size++] = list.get(i);
         }
     }
 
     @Override
     public T get(int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException("Index out of bound");
-        }
+        checkIndex(index);
         return (T) array[index];
     }
 
     @Override
     public void set(T value, int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException("Index out of bound");
-        }
+        checkIndex(index);
         array[index] = value;
     }
 
     @Override
     public T remove(int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException(
-                    "Index out of bound: " + index);
-        }
-
+        checkIndex(index);
         final T removed = (T) array[index];
-
-        for (int i = index; i < size - 1; i++) {
-            array[i] = array[i + 1];
+        int elementsToMove = size - index - 1;
+        if (elementsToMove > 0) {
+            System.arraycopy(array, index + 1, array, index, elementsToMove);
         }
-
-        array[size - 1] = null;
-        size--;
-
+        array[--size] = null;
         return removed;
     }
 
